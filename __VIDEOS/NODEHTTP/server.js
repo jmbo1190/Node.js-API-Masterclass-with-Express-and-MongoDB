@@ -29,16 +29,16 @@ const server = http.createServer((req, res) => {
     const { headers, url, method } = req;
     console.log(headers, url, method);
 
-    let found = true;  // change the type of response
+    let ok = true;  // change the type of response
     let ctnt;
     if (["/html", "/text", "/json"].indexOf(url) !== -1) { 
         ctnt = url.slice(1);
-        found = true;
+        ok = true;
     } else {
-        found = false;
+        ok = false;
         ctnt = "json";
     }
-    if (found) {
+    if (ok) {
         // Return default status 200 - OK
         res.setHeader('X-Powered-By', 'Node.js');
         if (ctnt === "html") {
@@ -62,13 +62,61 @@ const server = http.createServer((req, res) => {
         }
 
     } else {
-        // Return 404 Status - resource not found
-        res.statusCode = 404;
-        res.end(JSON.stringify({
-            success: false,
-            error: "Not found",
-            data: null, 
-        }));  // send a response to avoid client hanging 
+        if (url === "/protected"){
+            // Return 401 Status - Unauthorized
+            res.writeHead(401, {
+                'X-Powered-By': 'Node.js',
+                'Content-Type': 'application/json',
+            });
+            res.end(JSON.stringify({
+                success: false,
+                error: "Not authorized",
+                data: null, 
+            }));  // send a response to avoid client hanging 
+
+        } else if (url.match(/^\/register/)){
+            if (url.match(/^\/register\?(.+\&)?email=\w+@(\w+\.)+\w+/)) {
+                // Return 204 - Successfull, no content
+                res.writeHead(204, {
+                    'X-Powered-By': 'Node.js',
+                    'Content-Type': 'application/json',
+                });
+                res.end();
+
+            } else {
+                // Return 400 Status - Bad request
+                res.writeHead(400, {
+                    'X-Powered-By': 'Node.js',
+                    'Content-Type': 'application/json',
+                });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: "Please provide valid e-mail",
+                    data: null, 
+                }));  // send a response to avoid client hanging 
+
+            }
+        } else {
+            // Return 404 Status - resource not found
+            /*
+            // basic way to set headers
+            res.statusCode = 404;
+            res.setHeader('X-Powered-By', 'Node.js');
+            res.setHeader('Content-Type', 'application/json');
+            */
+            // alternative to the above
+            res.writeHead(404, {
+                'X-Powered-By': 'Node.js',
+                'Content-Type': 'application/json',
+            });
+            res.end(JSON.stringify({
+                success: false,
+                error: "Not found",
+                data: null, 
+            }));  // send a response to avoid client hanging 
+
+        }
+        
     }
     
     
